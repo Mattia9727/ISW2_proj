@@ -1,12 +1,10 @@
-package org.sample;
+package create_dataset;
 
 public class Version {
 
     private String hash;
     private String date;
     private String version;
-
-
 
     public Version(String hash, String date) {
         this.hash = hash;
@@ -21,6 +19,7 @@ public class Version {
     public String getDate() {
         return date;
     }
+
     public String getVersion() {
         return version;
     }
@@ -32,7 +31,9 @@ public class Version {
     public void setDate(String date) {
         this.date = date;
     }
+
     public void setVersion(String date) {
         this.version = version;
     }
+
 }

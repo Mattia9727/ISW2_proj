@@ -1,12 +1,10 @@
-package org.sample;
+package create_dataset;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.diff.Edit;
-import org.eclipse.jgit.diff.RawTextComparator;
+import org.eclipse.jgit.blame.BlameResult;
+import org.eclipse.jgit.diff.*;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.PersonIdent;
@@ -26,7 +24,6 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -220,6 +217,28 @@ public class RetrieveTicketsIDJGIT {
         return versions;
     }
 
+    public static List<Map<String, String>> getNFix(String projID) throws IOException, JSONException {
+        List<Map<String, String>> versions = new ArrayList<>();
+        String versionsUrl = "https://issues.apache.org/jira/rest/api/2/project/"+projID+"/version";
+        int i;
+
+        JSONObject jsons = readJsonFromUrl(versionsUrl);
+
+        for (i=0; i< jsons.getJSONArray("values").length(); i++) {
+            if(!jsons.getJSONArray("values").getJSONObject(i).has("releaseDate")){
+                continue;
+            }
+            System.out.println(jsons.getJSONArray("values").getJSONObject(i).getString("name"));
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("name", jsons.getJSONArray("values").getJSONObject(i).getString("name"));
+            map.put("releaseDate", jsons.getJSONArray("values").getJSONObject(i).getString("releaseDate"));
+            versions.add(map);
+            //FileUtils.writeStringToFile(file, jsons.getJSONObject(i).getString("name") + ";\n", true);
+            //System.out.println(i);
+        }
+        return versions;
+    }
+
     public static List<Map<String, String>> getVersionsFromGit(String projName) throws IOException, JSONException {
         List<Map<String, String>> versions = new ArrayList<>();
         String versionsUrlGit = "https://api.github.com/repos/apache/"+projName+"/tags";
@@ -244,10 +263,10 @@ public class RetrieveTicketsIDJGIT {
         do {
             //Only gets a max of 1000 at a time, so must do this multiple times if bugs >1000
             j = i + 1000;
-            String url = "https://issues.apache.org/jira/rest/api/2/search?jql=project=" + projName;
-                    //+ "%22AND%22issueType%22=%22Bug%22AND(%22status%22=%22closed%22OR"
-                    //+ "%22status%22=%22resolved%22)AND%22resolution%22=%22fixed%22&fields=key,resolutiondate,versions,created&startAt="
-                    //+ i + "&maxResults=" + j;
+            String url = "https://issues.apache.org/jira/rest/api/2/search?jql=project=" + projName
+                    + "%22AND%22issueType%22=%22Bug%22AND(%22status%22=%22closed%22OR"
+                    + "%22status%22=%22resolved%22)AND%22resolution%22=%22fixed%22&fields=key,resolutiondate,versions,created&startAt="
+                    + i + "&maxResults=" + j;
             JSONObject json = readJsonFromUrl(url);
             String string = json.toString(2);
             JSONArray issues = json.getJSONArray("issues");
@@ -266,8 +285,8 @@ public class RetrieveTicketsIDJGIT {
         String projName = "openjpa";
         String projID = "12310351";
         File path = new File("C:\\Users\\matti\\IdeaProjects\\openjpa\\.git");
-        File file = new File("output4.csv");
-        FileUtils.writeStringToFile(file, "version;filename;loc;loc_added;loc_deleted;type\n", false);
+        File file = new File(projName+".csv");
+        FileUtils.writeStringToFile(file, "version;filename;loc;loc_touched;NR;NFix;NAuth;LOC_added;MAX_LOC_added;AVG_LOC_added\n", false);
         List<Map<String, String>> versions = getVersions(projID);
         //List<Map<String, String>> gitVersions = getVersionsFromGit(projName);
 
@@ -289,6 +308,8 @@ public class RetrieveTicketsIDJGIT {
             ObjectId head = repository.resolve("HEAD");
 
 
+
+
             df.setRepository(repository);
             df.setDiffComparator(RawTextComparator.DEFAULT);
             df.setDetectRenames(true);
@@ -297,6 +318,8 @@ public class RetrieveTicketsIDJGIT {
             gitCommits = new ArrayList<>();
             log = git.log().call();
             commits = git.log().add(head).setMaxCount(10000).call();
+
+
 
             int i = 1;
 
@@ -315,6 +338,8 @@ public class RetrieveTicketsIDJGIT {
                 i+=1;
                 commitList.add(c);
             }
+
+
 
         } catch (GitAPIException e) {
             throw new RuntimeException(e);
@@ -347,10 +372,12 @@ public class RetrieveTicketsIDJGIT {
             }
             found = 0;
         }
+
+        List<DiffEntry> diff = null;
+        List<HashDifference> hashDiffs = new ArrayList<>();
+
         try {
 
-            List<DiffEntry> diff = null;
-            List<HashDifference> hashDiffs = new ArrayList<>();
 
 
             for (int i=1; i<finalMap.size(); i++){
@@ -371,48 +398,73 @@ public class RetrieveTicketsIDJGIT {
                     int j=0;
                     int hFound=0;
 
+                    Runtime rt = Runtime.getRuntime();
+                    String command = "git shortlog -sn 4b825dc642cb6eb9a060e54bf8d69288fbee49 "+ finalMap.get(i).get("hash")+" -- "+app[app.length - 1];
+                    File dir = new File("C:\\Users\\matti\\IdeaProjects\\openjpa\\");
+                    Process pr = rt.exec(command, null, dir);
+                    BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+                    String line = null;
+                    int nAuthors = 0;
+                    while ((line = input.readLine()) != null) {
+                        nAuthors += 1;
+                    }
                     for (HashDifference h : hashDiffs){
-                        if (h.getClassName().compareTo(filename) == 0 && h.getActualHash().compareTo(finalMap.get(i).get("hash")) == 0){
+                        if (h.getClassName().compareTo(filename) == 0){
                             hFound = 1;
+                            HashDifference newH = new HashDifference(filename,finalMap.get(i-1).get("hash"),finalMap.get(i).get("hash"),hashDiffs.get(j).getLines(),0,0,hashDiffs.get(j).getNumberOfRevisions());
+                            hashDiffs.add(newH);
                             break;
                         }
                         j+=1;
                     }
                     if (hFound==0){
-                        HashDifference newH = new HashDifference(filename,finalMap.get(i-1).get("hash"),finalMap.get(i).get("hash"),0,0,0);
+                        HashDifference newH = new HashDifference(filename,finalMap.get(i-1).get("hash"),finalMap.get(i).get("hash"),0,0,0,0);
                         hashDiffs.add(newH);
                     }
                     int loc_variation = 0;
-                    for (Edit edit: fh.toEditList()){
+                    EditList edList = fh.toEditList();
+                    int addLines = 0;
+                    int removedLines = 0;
+                    int maxLOC_Added = 0;
+
+                    for (Edit edit: edList){
                         if (edit.getType() == Edit.Type.INSERT) {
-                            loc_variation = edit.getEndB()- edit.getBeginB();
-                            hashDiffs.get(j).setAddedLines(loc_variation);
-                            hashDiffs.get(j).setLines(hashDiffs.get(j).getLines()+loc_variation);
+                            loc_variation = edit.getEndB() - edit.getBeginB();
+                            addLines += loc_variation;
+                            if (maxLOC_Added <= loc_variation){
+                                maxLOC_Added = loc_variation;
+                            }
                         }
                         else if (edit.getType() == Edit.Type.DELETE) {
                             loc_variation = edit.getEndA() - edit.getBeginA();
-                            hashDiffs.get(j).setRemovedLines(loc_variation);
-                            hashDiffs.get(j).setLines(hashDiffs.get(j).getLines()-loc_variation);
+                            removedLines += loc_variation;
                         }
                         else if (edit.getType() == Edit.Type.REPLACE) {
                             loc_variation = edit.getEndB()- edit.getBeginB();
-                            hashDiffs.get(j).setAddedLines(loc_variation);
-                            hashDiffs.get(j).setLines(hashDiffs.get(j).getLines()+loc_variation);
+                            addLines += loc_variation;
                             loc_variation = edit.getEndA() - edit.getBeginA();
-                            hashDiffs.get(j).setRemovedLines(loc_variation);
-                            hashDiffs.get(j).setLines(hashDiffs.get(j).getLines()-loc_variation);
+                            removedLines += loc_variation;
                         }
+
 //                        if (edit.getType() == Edit.Type.EMPTY) {
 //                            hashDiffs.get(j).setAddedLines(0);
 //                            hashDiffs.get(j).setRemovedLines(0);
 //                        }
-                    }
-                    for (HashDifference pHash : hashDiffs){
-                        FileUtils.writeStringToFile(file, finalMap.get(i).get("version") + ";" + pHash.getClassName() + ";" + pHash.getLines() + ";" + pHash.getAddedLines() + ";" + pHash.getRemovedLines() + "\n", true);
 
                     }
-
+                    hashDiffs.get(j).setAddedLines(addLines);
+                    hashDiffs.get(j).setRemovedLines(removedLines);
+                    hashDiffs.get(j).setLines(hashDiffs.get(j).getLines()+addLines-removedLines);
+                    hashDiffs.get(j).setNumberOfRevisions(hashDiffs.get(j).getNumberOfRevisions()+edList.size());
+                    int loc_touched = hashDiffs.get(j).getAddedLines()+hashDiffs.get(j).getRemovedLines();
+                    int avgLOC_Added = hashDiffs.get(j).getAddedLines()/edList.size();
+                    FileUtils.writeStringToFile(file, finalMap.get(i).get("version") + ";" + hashDiffs.get(j).getClassName() + ";" +
+                            hashDiffs.get(j).getLines() + ";" + loc_touched + ";" +
+                            hashDiffs.get(j).getNumberOfRevisions()+";_;"+nAuthors+";"+
+                            hashDiffs.get(j).getAddedLines() + ";"+maxLOC_Added+";"+avgLOC_Added+"\n", true);
+//                          "version;filename;loc;loc_touched;NR;NFix;NAuth;LOC_added;MAX_LOC_added;AVG_LOC_added\n"
 //                    FileUtils.writeStringToFile(file, "version;date;filename;loc;loc_touched\n", false);
+
                 }
             }
         } catch (GitAPIException e) {
@@ -424,6 +476,5 @@ public class RetrieveTicketsIDJGIT {
 
         return;
     }
-
 
 }

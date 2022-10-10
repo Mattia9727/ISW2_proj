@@ -11,12 +11,9 @@
 
   <developers>
     <developer>
-      <id>jsumners</id>
-      <name>James Sumners</name>
-      <email>james.sumners@gmail.com</email>
-      <roles>
-        <role>Lead Developer</role>
-      </roles>
+      <id>Mattia9727</id>
+      <name>Mattia Antonangeli</name>
+      <email>mattiaantonangeli@gmail.com</email>
     </developer>
   </developers>
 
@@ -44,12 +41,6 @@
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
       <version>6.1.0.202203080745-r</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
     </dependency>
 
     <dependency>
@@ -89,6 +80,14 @@
       <artifactId>json2flat</artifactId>
       <version>1.0.3</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.json/json -->
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20220320</version>
+    </dependency>
+
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>

@@ -1,4 +1,4 @@
-package org.sample;
+package create_dataset;
 
 public class HashDifference {
 
@@ -9,15 +9,17 @@ public class HashDifference {
     private int addedLines;
     private int removedLines;
 
+    private int numberOfRevisions;
 
-    public HashDifference(String className, String prevHash, String actualHash, int lines, int addedLines, int removedLines) {
+
+    public HashDifference(String className, String prevHash, String actualHash, int lines, int addedLines, int removedLines, int numberOfRevisions) {
         this.className = className;
         this.prevHash = prevHash;
         this.actualHash = actualHash;
-
         this.lines = lines;
         this.addedLines = addedLines;
         this.removedLines = removedLines;
+        this.numberOfRevisions = numberOfRevisions;
     }
 
     public String getPrevHash() {
@@ -31,6 +33,7 @@ public class HashDifference {
     public int getLines() {
         return lines;
     }
+
     public int getAddedLines() {
         return addedLines;
     }
@@ -51,9 +54,14 @@ public class HashDifference {
         this.actualHash = actualHash;
     }
 
+    public int getNumberOfRevisions() {
+        return numberOfRevisions;
+    }
+
     public void setLines(int lines) {
         this.lines = lines;
     }
+
     public void setAddedLines(int addedLines) {
         this.addedLines = addedLines;
     }
@@ -64,5 +72,9 @@ public class HashDifference {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public void setNumberOfRevisions(int numberOfRevisions) {
+        this.numberOfRevisions = numberOfRevisions;
     }
 }
