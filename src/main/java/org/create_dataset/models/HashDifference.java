@@ -1,4 +1,4 @@
-package create_dataset;
+package org.create_dataset.models;
 
 public class HashDifference {
 
@@ -8,9 +8,7 @@ public class HashDifference {
     private int lines;
     private int addedLines;
     private int removedLines;
-
     private int numberOfRevisions;
-
 
     public HashDifference(String className, String prevHash, String actualHash, int lines, int addedLines, int removedLines, int numberOfRevisions) {
         this.className = className;
@@ -46,16 +44,16 @@ public class HashDifference {
         return className;
     }
 
+    public int getNumberOfRevisions() {
+        return numberOfRevisions;
+    }
+
     public void setPrevHash(String prevHash) {
         this.prevHash = prevHash;
     }
 
     public void setActualHash(String actualHash) {
         this.actualHash = actualHash;
-    }
-
-    public int getNumberOfRevisions() {
-        return numberOfRevisions;
     }
 
     public void setLines(int lines) {
