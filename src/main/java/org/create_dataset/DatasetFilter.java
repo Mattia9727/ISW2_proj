@@ -13,11 +13,11 @@ public class DatasetFilter {
         throw new IllegalStateException("Utility class");
     }
 
-    public static List<Version> filterVersionsByDate(List<Version> versions)  {
+    public static void filterVersionsByDate(List<Version> versions)  {
         // Prendo la prima e l'ultima data delle release trovate
-        LocalDate firstDate = versions.get(0).getDate();
-        LocalDate lastDate = versions.get(0).getDate();
-        for (int i=1; i< versions.size(); i++){
+        LocalDate firstDate = versions.get(1).getDate();
+        LocalDate lastDate = versions.get(1).getDate();
+        for (int i=2; i< versions.size(); i++){
             LocalDate compareDate = versions.get(i).getDate();
             if (firstDate.isAfter(compareDate)) {firstDate = compareDate;}
             if (lastDate.isBefore(compareDate)) {lastDate = compareDate;}
@@ -39,6 +39,20 @@ public class DatasetFilter {
         for (int i = currentSize - 1; i >= newSize+1; i--) {
             versions.remove(i);
         }
-        return versions;
     }
+
+    public static boolean checkIfJavaAndNotTest(String filename){
+        // TODO: Split filename per fare check startswith(Test)
+        return !filename.endsWith(".java") || filename.endsWith("Test.java") || filename.endsWith("Tests.java") || filename.endsWith("TestCase.java") || filename.startsWith("Test");
+    }
+
+    public static void removeVersionsWithoutCommits(List<Version> versions){
+        for (int i=0; i< versions.size()-1; i++){
+            if (versions.get(i).getCommitList().size() == 0){
+                versions.remove(i);
+                i--;
+            }
+        }
+    }
+
 }

@@ -1,55 +1,89 @@
 package org.create_dataset.models;
 
+import org.eclipse.jgit.diff.DiffEntry;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Version {
 
-    private String hash;
     private LocalDate date;
     private String name;
-
-    public Version(String hash, LocalDate date, String name) {
-        this.hash = hash;
-        this.date = date;
-        this.name = name;
-    }
+    private List<Commit> commitList;
+    private List<DiffEntry> diffList;
+    private List<HashDifference> hashDiffs;
 
     public Version(LocalDate date, String name) {
-        this.hash = "";
         this.date = date;
         this.name = name;
+        this.commitList = new ArrayList<>();
     }
 
-    public String getHash() {
-        return hash;
+    public Version(String name) {
+        this.name = name;
+        this.commitList = new ArrayList<>();
     }
+
 
     public LocalDate getDate() {
         return date;
-    }
-
-    public String getVersion() {
-        return name;
-    }
-
-    public void setHash(String hash) {
-        this.hash = hash;
     }
 
     public void setDate(LocalDate date) {
         this.date = date;
     }
 
-    public void setVersion(String date) {
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
         this.name = name;
+    }
+
+    public List<Commit> getCommitList() {
+        return commitList;
+    }
+
+    public void setCommitList(List<Commit> commitList) {
+        this.commitList = commitList;
+    }
+
+    public List<DiffEntry> getDiffList() {
+        return diffList;
+    }
+
+    public void setDiffList(List<DiffEntry> diffList) {
+        this.diffList = diffList;
+    }
+
+    public List<HashDifference> getHashDiffs() {
+        return hashDiffs;
+    }
+
+    public void setHashDiffs(List<HashDifference> hashDiff) {
+        this.hashDiffs = hashDiff;
+    }
+
+    public String getHash() { return commitList.get(0).getHash();}
+
+    public HashDifference getHashDiffByName(String name) {
+        int i;
+        for (i=0; i<hashDiffs.size(); i++){
+            if (hashDiffs.get(i).getNewClassName().equals(name)){
+                break;
+            }
+        }
+        return hashDiffs.get(i);
     }
 
     @Override
     public String toString() {
         return "Version{" +
-                "hash='" + hash + '\'' +
-                ", date='" + date + '\'' +
+                "date=" + date +
                 ", name='" + name + '\'' +
+                ", commitList=" + commitList +
                 '}';
     }
 }
