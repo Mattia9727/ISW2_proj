@@ -1,6 +1,7 @@
 package org.create_dataset.models;
 
 import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.EditList;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ public class Version {
     private String name;
     private List<Commit> commitList;
     private List<DiffEntry> diffList;
+    private List<EditList> editsList;
     private List<HashDifference> hashDiffs;
 
     public Version(LocalDate date, String name) {
@@ -58,12 +60,20 @@ public class Version {
         this.diffList = diffList;
     }
 
+    public List<EditList> getEditsList() {
+        return editsList;
+    }
+
+    public void setEditsList(List<EditList> editsList) {
+        this.editsList = editsList;
+    }
+
     public List<HashDifference> getHashDiffs() {
         return hashDiffs;
     }
 
-    public void setHashDiffs(List<HashDifference> hashDiff) {
-        this.hashDiffs = hashDiff;
+    public void setHashDiffs(List<HashDifference> hashDiffs) {
+        this.hashDiffs = hashDiffs;
     }
 
     public String getHash() { return commitList.get(0).getHash();}

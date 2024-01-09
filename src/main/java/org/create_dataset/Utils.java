@@ -2,6 +2,7 @@ package org.create_dataset;
 
 import org.apache.commons.io.FileUtils;
 import org.create_dataset.models.Version;
+import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -128,5 +129,14 @@ public class Utils {
                 //FileUtils.writeStringToFile(file, key+";", "US-ASCII",true);
             }
         } while (i < total);
+    }
+
+    public static void checkRenames(List<DiffEntry> diffList){
+        for (DiffEntry de : diffList){
+            DiffEntry.ChangeType status = de.getChangeType();
+            if (status == DiffEntry.ChangeType.RENAME){
+                System.out.println("RENAME TROVATO");
+            }
+        }
     }
 }

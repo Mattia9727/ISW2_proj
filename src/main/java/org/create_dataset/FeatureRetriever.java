@@ -43,27 +43,14 @@ public class FeatureRetriever {
         return currLineMap;
     }
 
-    public void retrieveLines(HashDifference hd, DiffEntry d) throws IOException {
-        OutputStream outS = new ByteArrayOutputStream();
-        DiffFormatter df = new DiffFormatter(outS);
+    public void retrieveLines(HashDifference hd, EditList edList) throws IOException {
 
-        // Definisco repo e init git
-        try (Git git = Git.open(new File(pathname + "\\.git"))) {
-            Repository repository = git.getRepository();
-            df.setRepository(repository);
-            df.setDiffComparator(RawTextComparator.DEFAULT);
-            df.setDetectRenames(true);
-            // Dalle diffentry che ho già trovato mi prendo le editlist per capire le differenze tra i due commit delle
-            EditList edList = df.toFileHeader(d).toEditList();  // Trovo la lista delle modifiche del file tra un commit e il successivo
-            for (Edit edit : edList) {
-                Map<Integer, Integer> currLineMap = calculateLines(edit);
-                if ((d.getOldPath().equals(d.getNewPath()) || Objects.equals(d.getOldPath(), "/dev/null")) && (!DatasetFilter.checkIfJavaAndNotTest(d.getNewPath()))) {
-                    hd.setLocTouched(currLineMap.get(1));
-                    hd.setAddedLines(currLineMap.get(2));
-                    hd.setRemovedLines(currLineMap.get(3));
-                    hd.setLines(hd.getLines() + hd.getAddedLines() - hd.getRemovedLines());
-                } //TODO: controllo rename
-            }
+        for (Edit edit : edList) {  // TODO: Da rivedere se necessario
+            Map<Integer, Integer> currLineMap = calculateLines(edit);
+            hd.setLocTouched(currLineMap.get(1));
+            hd.setAddedLines(currLineMap.get(2));
+            hd.setRemovedLines(currLineMap.get(3));
+            hd.setLines(hd.getLines() + hd.getAddedLines() - hd.getRemovedLines());
         }
     }
 

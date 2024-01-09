@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static java.util.Locale.ITALIAN;
+import static org.create_dataset.Utils.checkRenames;
 import static org.create_dataset.Utils.readJsonFromUrl;
 
 public class DatasetRetriever {
@@ -142,15 +143,31 @@ public class DatasetRetriever {
         DatasetFilter.removeVersionsWithoutCommits(versions);
     }
 
+    private List<EditList>retrieveEditListFromDiffList(DiffFormatter df, List<DiffEntry> diffList) throws IOException {
+        List<EditList> editLists = new ArrayList<>();
+        for (DiffEntry d : diffList){
+            EditList edList = df.toFileHeader(d).toEditList();
+            editLists.add(edList);
+        }
+        return editLists;
+    }
+
     public void retrieveDiffListPerVersion(List<Version> versions) throws IOException {
+        OutputStream outS = new ByteArrayOutputStream();
+        DiffFormatter df = new DiffFormatter(outS);
 
-
-        try (Git git = Git.open(new File(this.pathname + "\\.git"))) {
+        // Definisco repo e init git
+        try (Git git = Git.open(new File(pathname + "\\.git"))) {
             Repository repository = git.getRepository();
+            df.setRepository(repository);
+            df.setDiffComparator(RawTextComparator.DEFAULT);
+            df.setDetectRenames(true);
             for (int i = 1; i < versions.size()-1; i++) {
                 String beforeHash = versions.get(i - 1).getHash();
                 String afterHash = versions.get(i).getHash();
                 versions.get(i).setDiffList(git.diff().setShowNameAndStatusOnly(true).setOldTree(Utils.prepareTreeParser(repository, beforeHash)).setNewTree(Utils.prepareTreeParser(repository, afterHash)).call());
+                List<EditList> editLists = retrieveEditListFromDiffList(df, versions.get(i).getDiffList());
+                versions.get(i).setEditsList(editLists);
             }
         } catch (IOException | GitAPIException e) {
             throw new IllegalArgumentException(e);
@@ -199,56 +216,9 @@ public class DatasetRetriever {
                 }
 
                 addHashDifferenceToList(foundHD, hashDiffs, oldFilename, newFilename, beforeHash, afterHash);
-                FeatureRetriever fr = new FeatureRetriever(pathname);
-                fr.retrieveLines(hashDiffs.get(hashDiffs.size() - 1), d);
             }
             versions.get(i).setHashDiffs(hashDiffs);
             System.out.println("Fatta versione "+ i);
         }
     }
 }
-
-
-//    private void bo(List<HashDifference> hashDiffs) {
-//        EditList edList = df.toFileHeader(d).toEditList();  // Trovo la lista delle modifiche del file tra un commit e il successivo
-//        int addLines = 0;
-//        int removedLines = 0;
-//        int maxLOCAdded = 0;
-//        int locVariation;
-//
-//        for (Edit edit : edList) {
-//            if (edit.getType() == Edit.Type.INSERT) {
-//                locVariation = edit.getEndB() - edit.getBeginB();
-//                addLines += locVariation;
-//                if (maxLOCAdded <= locVariation) {
-//                    maxLOCAdded = locVariation;
-//                }
-//            } else if (edit.getType() == Edit.Type.DELETE) {
-//                locVariation = edit.getEndA() - edit.getBeginA();
-//                removedLines += locVariation;
-//            } else if (edit.getType() == Edit.Type.REPLACE) {
-//                locVariation = edit.getEndB() - edit.getBeginB();
-//                addLines += locVariation;
-//                locVariation = edit.getEndA() - edit.getBeginA();
-//                removedLines += locVariation;
-//            }
-//
-//            //                        if (edit.getType() == Edit.Type.EMPTY) {
-//            //                            hashDiffs.get(j).setAddedLines(0);
-//            //                            hashDiffs.get(j).setRemovedLines(0);
-//            //                        }
-//
-//        }
-//
-//
-//        hashDiffs.get(j).setAddedLines(addLines);
-//        hashDiffs.get(j).setRemovedLines(removedLines);
-//        hashDiffs.get(j).setLines(hashDiffs.get(j).getLines() + addLines - removedLines);
-//        hashDiffs.get(j).setNumberOfRevisions(hashDiffs.get(j).getNumberOfRevisions() + edList.size());
-//        int locTouched = hashDiffs.get(j).getAddedLines() + hashDiffs.get(j).getRemovedLines();
-//        int avgLOCAdded = hashDiffs.get(j).getAddedLines() / edList.size();
-//        FileUtils.writeStringToFile(csvOutput, versions.get(i).getName() + ";" + hashDiffs.get(j).getClassName() + ";" +
-//                hashDiffs.get(j).getLines() + ";" + locTouched + ";" +
-//                hashDiffs.get(j).getNumberOfRevisions() + ";_;" + nAuthors + ";" +
-//                hashDiffs.get(j).getAddedLines() + ";" + maxLOCAdded + ";" + avgLOCAdded + "\n", true);
-//    }

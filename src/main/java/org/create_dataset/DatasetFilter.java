@@ -42,8 +42,10 @@ public class DatasetFilter {
     }
 
     public static boolean checkIfJavaAndNotTest(String filename){
+        String[] modFilename = filename.split("/");
+        String realFilename = modFilename[modFilename.length-1];
         // TODO: Split filename per fare check startswith(Test)
-        return !filename.endsWith(".java") || filename.endsWith("Test.java") || filename.endsWith("Tests.java") || filename.endsWith("TestCase.java") || filename.startsWith("Test");
+        return !realFilename.endsWith(".java") || realFilename.endsWith("Test.java") || realFilename.endsWith("Tests.java") || realFilename.endsWith("TestCase.java") || realFilename.startsWith("Test");
     }
 
     public static void removeVersionsWithoutCommits(List<Version> versions){
