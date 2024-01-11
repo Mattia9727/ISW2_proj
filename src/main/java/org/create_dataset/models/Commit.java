@@ -6,21 +6,15 @@ public class Commit {
     private String index;
     private String hash;
     private LocalDate date;
-    private boolean isBug;
+    private String comment;
+    private Bug bug;
 
 
-    public Commit(String index, String hash, LocalDate date) {
+    public Commit(String index, String hash, LocalDate date, String comment) {
         this.index = index;
         this.hash = hash;
         this.date = date;
-        this.isBug = false;
-    }
-
-    public Commit(String index, String hash, LocalDate date, boolean isBug) {
-        this.index = index;
-        this.hash = hash;
-        this.date = date;
-        this.isBug = isBug;
+        this.comment = comment;
     }
 
     public String getIndex() {
@@ -47,21 +41,19 @@ public class Commit {
         this.date = date;
     }
 
-    public boolean isBug() {
-        return isBug;
+    public String getComment() {
+        return comment;
     }
 
-    public void setBug(boolean bug) {
-        isBug = bug;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
-    @Override
-    public String toString() {
-        return "Commit{" +
-                "index='" + index + '\'' +
-                ", hash='" + hash + '\'' +
-                ", date=" + date +
-                ", isBug=" + isBug +
-                '}';
+    public Bug getBug() {
+        return bug;
+    }
+
+    public void setBug(Bug bug) {
+        this.bug = bug;
     }
 }

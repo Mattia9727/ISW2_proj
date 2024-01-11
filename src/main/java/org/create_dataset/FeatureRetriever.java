@@ -2,15 +2,10 @@ package org.create_dataset;
 
 import org.create_dataset.models.HashDifference;
 import org.create_dataset.models.Version;
-import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.*;
-import org.eclipse.jgit.lib.Repository;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class FeatureRetriever {
 
@@ -23,11 +18,12 @@ public class FeatureRetriever {
     private Map<Integer, Integer> calculateLines(Edit edit){
         Map<Integer, Integer> currLineMap = new HashMap<>();
 
-        int locVariation = 0;
-        int locVariationAdd = 0;
-        int locVariationRemove = 0;
+        int locVariation;
+        int locVariationAdd;
+        int locVariationRemove;
         int addLines=0;
         int removedLines=0;
+        int churn;
 
         locVariationAdd = edit.getEndB() - edit.getBeginB();
         addLines += locVariationAdd;
@@ -36,22 +32,48 @@ public class FeatureRetriever {
         removedLines += locVariationRemove;
 
         locVariation = locVariationAdd + locVariationRemove;
+        churn = locVariationAdd - locVariationRemove;
+
 
         currLineMap.put(1,locVariation);
         currLineMap.put(2,addLines);
         currLineMap.put(3,removedLines);
+        currLineMap.put(4,churn);
         return currLineMap;
     }
 
-    public void retrieveLines(HashDifference hd, EditList edList) throws IOException {
-
-        for (Edit edit : edList) {  // TODO: Da rivedere se necessario
+    private void retrieveLines(HashDifference hd, EditList edList){
+        int maxLocAdd=0;
+        int avgLocAdd=0;
+        int maxChurn=0;
+        int avgChurn=0;
+        List<Integer>locAddList = new ArrayList<>();
+        List<Integer>churnList = new ArrayList<>();
+        for (Edit edit : edList) {
             Map<Integer, Integer> currLineMap = calculateLines(edit);
-            hd.setLocTouched(currLineMap.get(1));
-            hd.setAddedLines(currLineMap.get(2));
-            hd.setRemovedLines(currLineMap.get(3));
-            hd.setLines(hd.getLines() + hd.getAddedLines() - hd.getRemovedLines());
+            hd.setLocTouched(hd.getLocTouched() + currLineMap.get(1));
+            hd.setAddedLines(hd.getAddedLines() + currLineMap.get(2));
+            hd.setRemovedLines(hd.getRemovedLines() + currLineMap.get(3));
+            hd.setChurn(hd.getChurn() + currLineMap.get(4));
+            hd.setLines(hd.getLines() + currLineMap.get(2) - currLineMap.get(3));
+
+            if (currLineMap.get(2)>maxLocAdd) maxLocAdd=currLineMap.get(2);
+            if (currLineMap.get(4)>maxChurn) maxChurn=currLineMap.get(4);
+
+            locAddList.add(currLineMap.get(2));
+            churnList.add(currLineMap.get(4));
         }
+        for (int la : locAddList) {
+            avgLocAdd += la;
+        }
+        for (int c : churnList) {
+            avgChurn += c;
+        }
+        hd.setAvgLocAdded(avgLocAdd/locAddList.size());
+        hd.setAvgChurn(avgChurn/churnList.size());
+        hd.setMaxLocAdded(maxLocAdd);
+        hd.setMaxChurn(maxChurn);
+        hd.setNumberOfRevisions(edList.size());
     }
 
 
@@ -69,6 +91,25 @@ public class FeatureRetriever {
         }
 
         return nAuthors;
+    }
+
+    public void retrieveAllFeatures(List<Version> versions, String pathname) throws IOException {
+        List<Version> myVersions = new ArrayList<>(versions.subList(1, versions.size() - 1));
+        int nV=1;
+        HashDifference foundHD;
+        for (Version v : myVersions){
+            for (int i=0; i<v.getHashDiffs().size()-1; i++){
+                HashDifference hd = v.getHashDiffs().get(i);
+                DiffEntry de = v.getDiffList().get(i);
+                if (de.getChangeType()== DiffEntry.ChangeType.MODIFY){
+                    foundHD = DatasetRetriever.findOldVersionHashDiff(versions, de.getOldPath(), nV);
+                    if (foundHD!=null) hd.setLines(foundHD.getLines());
+                }
+                retrieveLines(hd, v.getEditsList().get(i));
+                hd.setnAuthors(retrieveNAuthors(hd.getActualHash(),hd.getNewClassName(), pathname));
+            }
+            nV++;
+        }
     }
 
 }

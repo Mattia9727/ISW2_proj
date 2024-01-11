@@ -1,6 +1,8 @@
 package org.create_dataset;
 
+import org.create_dataset.models.Bug;
 import org.create_dataset.models.Version;
+import org.eclipse.jgit.diff.DiffEntry;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +15,7 @@ public class DatasetFilter {
         throw new IllegalStateException("Utility class");
     }
 
-    public static void filterVersionsByDate(List<Version> versions)  {
+    public static LocalDate filterVersionsByDate(List<Version> versions)  {
         // Prendo la prima e l'ultima data delle release trovate
         LocalDate firstDate = versions.get(1).getDate();
         LocalDate lastDate = versions.get(1).getDate();
@@ -27,7 +29,7 @@ public class DatasetFilter {
         long daysBetween = DAYS.between(firstDate, lastDate)/2;
         LocalDate halfDate = firstDate.plusDays(daysBetween);
 
-        int newSize = 0;
+        int newSize;
 
         // Tronco lista di versioni prendendo come ultima versione la prima da escludere
         for (newSize=0; newSize< versions.size(); newSize++) {
@@ -35,26 +37,31 @@ public class DatasetFilter {
                 break;
             }
         }
-        final int currentSize = versions.size();
-        for (int i = currentSize - 1; i >= newSize+1; i--) {
-            versions.remove(i);
+        if (versions.size() > newSize + 1) {
+            versions.subList(newSize + 1, versions.size()).clear();
         }
+        return halfDate;
+    }
+
+    public static void filterBugsByDate(List<Bug> bugs, LocalDate date){
+
+        bugs.removeIf(b -> b.getOv().isAfter(date));
+
     }
 
     public static boolean checkIfJavaAndNotTest(String filename){
-        String[] modFilename = filename.split("/");
-        String realFilename = modFilename[modFilename.length-1];
-        // TODO: Split filename per fare check startswith(Test)
-        return !realFilename.endsWith(".java") || realFilename.endsWith("Test.java") || realFilename.endsWith("Tests.java") || realFilename.endsWith("TestCase.java") || realFilename.startsWith("Test");
+        return !filename.endsWith(".java") || filename.contains("test") || filename.contains("Test");
     }
 
     public static void removeVersionsWithoutCommits(List<Version> versions){
-        for (int i=0; i< versions.size()-1; i++){
-            if (versions.get(i).getCommitList().size() == 0){
-                versions.remove(i);
-                i--;
-            }
-        }
+        versions.removeIf(version -> version.getCommitList().isEmpty());
+    }
+
+    public static List<DiffEntry> filterDifflist(List<DiffEntry> diffList){
+        diffList.removeIf(diffEntry -> checkIfJavaAndNotTest(diffEntry.getNewPath()));
+
+
+        return diffList;
     }
 
 }

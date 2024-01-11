@@ -1,5 +1,6 @@
 package org.create_dataset;
 
+import org.create_dataset.models.Bug;
 import org.create_dataset.models.Commit;
 import org.create_dataset.models.HashDifference;
 import org.create_dataset.models.Version;
@@ -10,48 +11,30 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.logging.Logger;
 
-import static java.util.Locale.ITALIAN;
-import static org.create_dataset.Utils.checkRenames;
-import static org.create_dataset.Utils.readJsonFromUrl;
+import static org.create_dataset.DatasetFilter.filterDifflist;
+
+
 
 public class DatasetRetriever {
 
+    Logger logger = Logger.getLogger(getClass().getName());
+
+    private static final String GIT = "\\.git";  // Compliant
+
     // Init stringhe usate
-    String projName;
-    String projID;
     String pathname;
     List<RevCommit> commitList = new ArrayList<>();
 
-    public DatasetRetriever(String projName, String projID, String pathname) {
-        this.projName = projName;
-        this.projID = projID;
+    public DatasetRetriever(String pathname) {
+
         this.pathname = pathname;
-    }
-
-    public String getProjName() {
-        return projName;
-    }
-
-    public void setProjName(String projName) {
-        this.projName = projName;
-    }
-
-    public String getProjID() {
-        return projID;
-    }
-
-    public void setProjID(String projID) {
-        this.projID = projID;
     }
 
     public String getPathname() {
@@ -62,39 +45,12 @@ public class DatasetRetriever {
         this.pathname = pathname;
     }
 
-    public List<Version> getReleasesFromJira() throws IOException, JSONException {
-        List<Version> versions = new ArrayList<>();
-        Version v = new Version(LocalDate.ofEpochDay(0),"init");
-        versions.add(v);
 
-        String versionsUrl = "https://issues.apache.org/jira/rest/api/2/project/" + this.projName;
-        JSONObject jsons = readJsonFromUrl(versionsUrl);
-        JSONArray values = jsons.getJSONArray("versions");
-
-        for (int i = 0; i < values.length(); i++) {
-            if (!values.getJSONObject(i).has("releaseDate")) {
-                continue;
-            }
-            String name = values.getJSONObject(i).getString("name");
-            String releaseDate = values.getJSONObject(i).getString("releaseDate");
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            formatter = formatter.withLocale(ITALIAN);  // Locale specifies human language for translating, and cultural norms for lowercase/uppercase and abbreviations and such. Example: Locale.US or Locale.CANADA_FRENCH
-            LocalDate date = LocalDate.parse(releaseDate, formatter);
-
-            v = new Version(date, name);
-            versions.add(v);
-        }
-
-        versions.sort(Comparator.comparing(Version::getDate));
-
-        return versions;
-    }
 
     // Prendo tutti i commit in Git e metto hash e date nella lista gitCommits
     public List<Commit> getCommits() throws IOException, GitAPIException {
 
-        File path = new File(this.pathname + "\\.git");
+        File path = new File(this.pathname + GIT);
         try (Git git = Git.open(path)) {
             Repository repository = git.getRepository();
             ObjectId head = repository.resolve("HEAD");
@@ -110,7 +66,9 @@ public class DatasetRetriever {
                 Date commitDate = authorIdent.getWhen();
                 LocalDate cDate = commitDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-                Commit commit = new Commit(String.valueOf(i), c.getName(), cDate);
+                String comment = c.getShortMessage();
+
+                Commit commit = new Commit(String.valueOf(i), c.getName(), cDate, comment);
 
                 gitCommits.add(commit);
                 i += 1;
@@ -143,6 +101,15 @@ public class DatasetRetriever {
         DatasetFilter.removeVersionsWithoutCommits(versions);
     }
 
+
+    public void assignBugsToCommits(List<Bug>bugs, List<Commit>commits){
+        for (Commit c : commits){
+            for (Bug b : bugs){
+                if (c.getComment().contains(b.getIssueName())) c.setBug(b);
+            }
+        }
+    }
+
     private List<EditList>retrieveEditListFromDiffList(DiffFormatter df, List<DiffEntry> diffList) throws IOException {
         List<EditList> editLists = new ArrayList<>();
         for (DiffEntry d : diffList){
@@ -152,12 +119,12 @@ public class DatasetRetriever {
         return editLists;
     }
 
-    public void retrieveDiffListPerVersion(List<Version> versions) throws IOException {
+    public void retrieveDiffListPerVersion(List<Version> versions){
         OutputStream outS = new ByteArrayOutputStream();
         DiffFormatter df = new DiffFormatter(outS);
 
         // Definisco repo e init git
-        try (Git git = Git.open(new File(pathname + "\\.git"))) {
+        try (Git git = Git.open(new File(pathname + GIT))) {
             Repository repository = git.getRepository();
             df.setRepository(repository);
             df.setDiffComparator(RawTextComparator.DEFAULT);
@@ -165,7 +132,7 @@ public class DatasetRetriever {
             for (int i = 1; i < versions.size()-1; i++) {
                 String beforeHash = versions.get(i - 1).getHash();
                 String afterHash = versions.get(i).getHash();
-                versions.get(i).setDiffList(git.diff().setShowNameAndStatusOnly(true).setOldTree(Utils.prepareTreeParser(repository, beforeHash)).setNewTree(Utils.prepareTreeParser(repository, afterHash)).call());
+                versions.get(i).setDiffList(filterDifflist(git.diff().setShowNameAndStatusOnly(true).setOldTree(Utils.prepareTreeParser(repository, beforeHash)).setNewTree(Utils.prepareTreeParser(repository, afterHash)).call()));
                 List<EditList> editLists = retrieveEditListFromDiffList(df, versions.get(i).getDiffList());
                 versions.get(i).setEditsList(editLists);
             }
@@ -174,7 +141,40 @@ public class DatasetRetriever {
         }
     }
 
-    public HashDifference findOldVersionHashDiff(List<Version> versions, String oldFilename, int start){
+    private void findBuggyHashDifferences(Version v, List<DiffEntry> diffList, Bug b){
+        for (DiffEntry d : diffList) {
+            String name = d.getNewPath();
+            for (HashDifference h  : v.getHashDiffs()){
+                if (h.getNewClassName().equals(name) && b.getVersions().contains(v.getName())) h.setBuggy(true);
+            }
+        }
+    }
+
+    public void retrieveBuggyHashDiffs(List<Version> versions){
+        OutputStream outS = new ByteArrayOutputStream();
+        DiffFormatter df = new DiffFormatter(outS);
+
+        // Definisco repo e init git
+        try (Git git = Git.open(new File(pathname + GIT))) {
+            Repository repository = git.getRepository();
+            df.setRepository(repository);
+            df.setDiffComparator(RawTextComparator.DEFAULT);
+            df.setDetectRenames(true);
+            for (Version v : versions.subList(1,versions.size()-1)) {
+                for (int i = 1; i < v.getCommitList().size() - 1; i++) {
+                    if (v.getCommitList().get(i).getBug() == null) continue;
+                    String beforeHash = v.getCommitList().get(i - 1).getHash();
+                    String afterHash = v.getCommitList().get(i).getHash();
+                    List<DiffEntry> diffList = filterDifflist(git.diff().setShowNameAndStatusOnly(true).setOldTree(Utils.prepareTreeParser(repository, beforeHash)).setNewTree(Utils.prepareTreeParser(repository, afterHash)).call());
+                    if (!diffList.isEmpty()) findBuggyHashDifferences(v, diffList, v.getCommitList().get(i).getBug());
+                }
+            }
+        } catch (IOException | GitAPIException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static HashDifference findOldVersionHashDiff(List<Version> versions, String oldFilename, int start){
         for (int i = start-1; i>0; i--){
             for (HashDifference h : versions.get(i).getHashDiffs()) {
                 if (h.getNewClassName().compareTo(oldFilename) == 0) { //Se tra gli hashdifference dell'ultima versione trovo questo file, ne creo uno nuovo a partire dal vecchio
@@ -182,23 +182,21 @@ public class DatasetRetriever {
                 }
             }
         }
-        System.out.println("QUALCOSA NON VA");
         return null;
     }
 
-    public void addHashDifferenceToList(HashDifference oldVersionHashDiff, List<HashDifference> hashDiffs, String oldFilename, String newFilename, String beforeHash, String afterHash) {
-        HashDifference newH = new HashDifference(oldFilename, newFilename, beforeHash, afterHash, 0, 0, 0, 0);
+    public void addHashDifferenceToList(HashDifference oldVersionHashDiff, List<HashDifference> hashDiffs, String oldFilename, String newFilename, String afterHash) {
+        HashDifference newH = new HashDifference(oldFilename, newFilename, afterHash);
         if (oldVersionHashDiff != null) {
             newH.setLines(oldVersionHashDiff.getLines());
         }
         hashDiffs.add(newH);
     }
 
-    public void retrieveHashDifferences(List<Version> versions) throws IOException {
-        HashDifference foundHD = null;
+    public void retrieveHashDifferences(List<Version> versions){
+        HashDifference foundHD;
         for (int i = 1; i < versions.size()-1; i++) {
             List<HashDifference> hashDiffs = new ArrayList<>();
-            String beforeHash = versions.get(i - 1).getHash();
             String afterHash = versions.get(i).getHash();
             for (DiffEntry d : versions.get(i).getDiffList()) {
                 String newFilename = d.getNewPath(); // Prende path del file considerato
@@ -210,15 +208,14 @@ public class DatasetRetriever {
                 foundHD = null;
                 if (!Objects.equals(oldFilename, "/dev/null")){
                     if (!Objects.equals(oldFilename, newFilename)){
-                        System.out.println(("Rename!"));
+                        logger.info("Rename!");
                     }
                     foundHD = findOldVersionHashDiff(versions, oldFilename, i);
                 }
 
-                addHashDifferenceToList(foundHD, hashDiffs, oldFilename, newFilename, beforeHash, afterHash);
+                addHashDifferenceToList(foundHD, hashDiffs, oldFilename, newFilename, afterHash);
             }
             versions.get(i).setHashDiffs(hashDiffs);
-            System.out.println("Fatta versione "+ i);
         }
     }
 }
