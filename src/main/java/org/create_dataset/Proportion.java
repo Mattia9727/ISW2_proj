@@ -1,7 +1,7 @@
 package org.create_dataset;
 
 import org.create_dataset.models.Bug;
-import org.create_dataset.models.Version;
+import org.create_dataset.models.VersionRelease;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,10 +30,10 @@ public class Proportion {
         List<Float> projAvgPs = new ArrayList<>();
         for (String proj : otherProjNames) {
             List<Float> intraProjPs = new ArrayList<>();
-            List<Version> otherProjVersions = getReleasesFromJira(proj); //Recupera nomi versioni con data di rilascio
+            List<VersionRelease> otherProjVersionReleases = getReleasesFromJira(proj); //Recupera nomi versioni con data di rilascio
             List<Bug> otherProjBugs = getIssuesFromJira(proj);
             for (Bug b : otherProjBugs) {
-                b.retrieveOvFvVersions(otherProjVersions);
+                b.retrieveOvFvVersions(otherProjVersionReleases);
                 if (b.getIvVersion()!=0) intraProjPs.add(calculateP(b));
             }
             projAvgPs.add(Utils.calculateAvg(intraProjPs));
@@ -47,7 +47,7 @@ public class Proportion {
     private void movingWindow(List<Bug> bugs, float coldstartP){
         int percent = bugs.size()/100;
         int calcIv;
-        for (int i=0; i<bugs.size()-1; i++){
+        for (int i=0; i<bugs.size(); i++){
             if(!bugs.get(i).getVersions().isEmpty()) continue;   //Ho già iv, non devo trovarlo
             if (i<percent){                                     //Caso iniziale, devo usare il p del Cold Start
                 calcIv = calculateIv(bugs.get(i), coldstartP);
