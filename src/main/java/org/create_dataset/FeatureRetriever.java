@@ -1,7 +1,7 @@
 package org.create_dataset;
 
 import org.create_dataset.models.HashDifference;
-import org.create_dataset.models.Version;
+import org.create_dataset.models.VersionRelease;
 import org.eclipse.jgit.diff.*;
 
 import java.io.*;
@@ -93,17 +93,18 @@ public class FeatureRetriever {
         return nAuthors;
     }
 
-    public void retrieveAllFeatures(List<Version> versions, String pathname) throws IOException {
-        List<Version> myVersions = new ArrayList<>(versions.subList(1, versions.size() - 1));
+    public void retrieveAllFeatures(List<VersionRelease> versionReleases, String pathname) throws IOException {
+        List<VersionRelease> myVersionReleases = new ArrayList<>(versionReleases.subList(1, versionReleases.size() - 1));
         int nV=1;
         HashDifference foundHD;
-        for (Version v : myVersions){
-            for (int i=0; i<v.getHashDiffs().size()-1; i++){
+        for (VersionRelease v : myVersionReleases){
+            for (int i=0; i<v.getHashDiffs().size(); i++){
                 HashDifference hd = v.getHashDiffs().get(i);
                 DiffEntry de = v.getDiffList().get(i);
                 if (de.getChangeType()== DiffEntry.ChangeType.MODIFY){
-                    foundHD = DatasetRetriever.findOldVersionHashDiff(versions, de.getOldPath(), nV);
+                    foundHD = DatasetRetriever.findOldVersionHashDiff(versionReleases, de.getOldPath(), nV);
                     if (foundHD!=null) hd.setLines(foundHD.getLines());
+                    else System.out.println("ERRORE");
                 }
                 retrieveLines(hd, v.getEditsList().get(i));
                 hd.setnAuthors(retrieveNAuthors(hd.getActualHash(),hd.getNewClassName(), pathname));

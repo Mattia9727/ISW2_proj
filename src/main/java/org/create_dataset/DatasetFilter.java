@@ -1,7 +1,7 @@
 package org.create_dataset;
 
 import org.create_dataset.models.Bug;
-import org.create_dataset.models.Version;
+import org.create_dataset.models.VersionRelease;
 import org.eclipse.jgit.diff.DiffEntry;
 
 import java.time.LocalDate;
@@ -15,12 +15,12 @@ public class DatasetFilter {
         throw new IllegalStateException("Utility class");
     }
 
-    public static LocalDate filterVersionsByDate(List<Version> versions)  {
+    public static LocalDate filterVersionsByDate(List<VersionRelease> versionReleases)  {
         // Prendo la prima e l'ultima data delle release trovate
-        LocalDate firstDate = versions.get(1).getDate();
-        LocalDate lastDate = versions.get(1).getDate();
-        for (int i=2; i< versions.size(); i++){
-            LocalDate compareDate = versions.get(i).getDate();
+        LocalDate firstDate = versionReleases.get(1).getDate();
+        LocalDate lastDate = versionReleases.get(1).getDate();
+        for (int i = 2; i< versionReleases.size(); i++){
+            LocalDate compareDate = versionReleases.get(i).getDate();
             if (firstDate.isAfter(compareDate)) {firstDate = compareDate;}
             if (lastDate.isBefore(compareDate)) {lastDate = compareDate;}
         }
@@ -32,13 +32,13 @@ public class DatasetFilter {
         int newSize;
 
         // Tronco lista di versioni prendendo come ultima versione la prima da escludere
-        for (newSize=0; newSize< versions.size(); newSize++) {
-            if (halfDate.isBefore(versions.get(newSize).getDate())) {
+        for (newSize=0; newSize< versionReleases.size(); newSize++) {
+            if (halfDate.isBefore(versionReleases.get(newSize).getDate())) {
                 break;
             }
         }
-        if (versions.size() > newSize + 1) {
-            versions.subList(newSize + 1, versions.size()).clear();
+        if (versionReleases.size() > newSize + 1) {
+            versionReleases.subList(newSize + 1, versionReleases.size()).clear();
         }
         return halfDate;
     }
@@ -53,8 +53,8 @@ public class DatasetFilter {
         return !filename.endsWith(".java") || filename.contains("test") || filename.contains("Test");
     }
 
-    public static void removeVersionsWithoutCommits(List<Version> versions){
-        versions.removeIf(version -> version.getCommitList().isEmpty());
+    public static void removeVersionsWithoutCommits(List<VersionRelease> versionReleases){
+        versionReleases.removeIf(version -> version.getCommitList().isEmpty());
     }
 
     public static List<DiffEntry> filterDifflist(List<DiffEntry> diffList){

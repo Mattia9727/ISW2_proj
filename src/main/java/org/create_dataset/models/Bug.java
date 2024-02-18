@@ -73,42 +73,42 @@ public class Bug {
         this.fvVersion = fvVersion;
     }
 
-    private void retrieveOvVersion(List<Version> versionList){
-        for (int i=0; i<versionList.size(); i++){
-            if (this.getOv().isBefore(versionList.get(i).getDate())){
+    private void retrieveOvVersion(List<VersionRelease> versionReleaseList){
+        for (int i = 0; i< versionReleaseList.size(); i++){
+            if (this.getOv().isBefore(versionReleaseList.get(i).getDate())){
                 this.setOvVersion(i);
                 break;
             }
         }
     }
 
-    private void retrieveFvVersion(List<Version> versionList){
-        for (int i=0; i<versionList.size(); i++){
-            if (this.getFv().isBefore(versionList.get(i).getDate())){
+    private void retrieveFvVersion(List<VersionRelease> versionReleaseList){
+        for (int i = 0; i< versionReleaseList.size(); i++){
+            if (this.getFv().isBefore(versionReleaseList.get(i).getDate())){
                 this.setFvVersion(i);
                 break;
             }
         }
     }
 
-    public void retrieveIvByVersions(List<Version> versionList){
-        for (int i=1; i<versionList.size()-1; i++){
-            if (this.getVersions().contains(versionList.get(i).getName())){
+    public void retrieveIvByVersions(List<VersionRelease> versionReleaseList){
+        for (int i = 1; i< versionReleaseList.size()-1; i++){
+            if (this.getVersions().contains(versionReleaseList.get(i).getName())){
                 this.setIvVersion(i);
                 break;
             }
         }
     }
 
-    public void retrieveOvFvVersions(List<Version> versionList){
-        retrieveFvVersion(versionList);
-        retrieveOvVersion(versionList);
-        retrieveIvByVersions(versionList);
+    public void retrieveOvFvVersions(List<VersionRelease> versionReleaseList){
+        retrieveFvVersion(versionReleaseList);
+        retrieveOvVersion(versionReleaseList);
+        retrieveIvByVersions(versionReleaseList);
     }
 
-    public void retrieveVersionsByIvFv(List<Version> versionList){
+    public void retrieveVersionsByIvFv(List<VersionRelease> versionReleaseList){
         for(int i=ivVersion; i<fvVersion; i++){
-            versions.add(versionList.get(i).getName());
+            versions.add(versionReleaseList.get(i).getName());
         }
     }
 

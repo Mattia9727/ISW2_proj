@@ -1,7 +1,7 @@
 package org.create_dataset;
 
 import org.create_dataset.models.Bug;
-import org.create_dataset.models.Version;
+import org.create_dataset.models.VersionRelease;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,10 +21,10 @@ public class JiraManager {
     private JiraManager() {
     }
 
-    public static List<Version> getReleasesFromJira(String projName) throws IOException, JSONException {
-        List<Version> versions = new ArrayList<>();
-        Version v = new Version(LocalDate.ofEpochDay(0),"init");
-        versions.add(v);
+    public static List<VersionRelease> getReleasesFromJira(String projName) throws IOException, JSONException {
+        List<VersionRelease> versionReleases = new ArrayList<>();
+        VersionRelease v = new VersionRelease(LocalDate.ofEpochDay(0),"init");
+        versionReleases.add(v);
 
         String versionsUrl = "https://issues.apache.org/jira/rest/api/2/project/" + projName;
         JSONObject jsons = readJsonFromUrl(versionsUrl);
@@ -41,13 +41,13 @@ public class JiraManager {
             formatter = formatter.withLocale(ITALIAN);  // Locale specifies human language for translating, and cultural norms for lowercase/uppercase and abbreviations and such. Example: Locale.US or Locale.CANADA_FRENCH
             LocalDate date = LocalDate.parse(releaseDate, formatter);
 
-            v = new Version(date, name);
-            versions.add(v);
+            v = new VersionRelease(date, name);
+            versionReleases.add(v);
         }
 
-        versions.sort(Comparator.comparing(Version::getDate));
+        versionReleases.sort(Comparator.comparing(VersionRelease::getDate));
 
-        return versions;
+        return versionReleases;
     }
 
 
