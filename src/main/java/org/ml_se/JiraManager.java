@@ -36,11 +36,8 @@ public class JiraManager {
 
 
         for (int i = 0; i < values.length(); i++) {
-            if (!values.getJSONObject(i).has("releaseDate")) {
-                continue;
-            }
             String name = values.getJSONObject(i).getString("name");
-            if (!pattern.matcher(name).matches()) continue;
+            if (!values.getJSONObject(i).has("releaseDate") || !pattern.matcher(name).matches()) continue;
             String releaseDate = values.getJSONObject(i).getString("releaseDate");
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
