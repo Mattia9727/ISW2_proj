@@ -1,7 +1,7 @@
-package org.create_dataset;
+package org.ml_se;
 
-import org.create_dataset.models.Bug;
-import org.create_dataset.models.VersionRelease;
+import org.ml_se.models.Bug;
+import org.ml_se.models.VersionRelease;
 import org.eclipse.jgit.diff.DiffEntry;
 
 import java.time.LocalDate;

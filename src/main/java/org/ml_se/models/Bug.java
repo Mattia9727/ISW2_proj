@@ -1,4 +1,4 @@
-package org.create_dataset.models;
+package org.ml_se.models;
 
 import java.time.LocalDate;
 import java.util.List;

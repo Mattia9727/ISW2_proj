@@ -1,7 +1,7 @@
-package org.create_dataset;
+package org.ml_se;
 
-import org.create_dataset.models.HashDifference;
-import org.create_dataset.models.VersionRelease;
+import org.ml_se.models.HashDifference;
+import org.ml_se.models.VersionRelease;
 import org.eclipse.jgit.diff.*;
 
 import java.io.*;
@@ -104,7 +104,6 @@ public class FeatureRetriever {
                 if (de.getChangeType()== DiffEntry.ChangeType.MODIFY){
                     foundHD = DatasetRetriever.findOldVersionHashDiff(versionReleases, de.getOldPath(), nV);
                     if (foundHD!=null) hd.setLines(foundHD.getLines());
-                    else System.out.println("ERRORE");
                 }
                 retrieveLines(hd, v.getEditsList().get(i));
                 hd.setnAuthors(retrieveNAuthors(hd.getActualHash(),hd.getNewClassName(), pathname));

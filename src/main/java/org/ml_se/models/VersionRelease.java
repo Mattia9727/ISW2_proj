@@ -1,4 +1,4 @@
-package org.create_dataset.models;
+package org.ml_se.models;
 
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.EditList;
@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Version {
+public class VersionRelease {
 
     private LocalDate date;
     private String name;
@@ -16,13 +16,13 @@ public class Version {
     private List<EditList> editsList;
     private List<HashDifference> hashDiffs;
 
-    public Version(LocalDate date, String name) {
+    public VersionRelease(LocalDate date, String name) {
         this.date = date;
         this.name = name;
         this.commitList = new ArrayList<>();
     }
 
-    public Version(String name) {
+    public VersionRelease(String name) {
         this.name = name;
         this.commitList = new ArrayList<>();
     }

@@ -1,7 +1,7 @@
-package org.create_dataset;
+package org.ml_se;
 
-import org.create_dataset.models.Bug;
-import org.create_dataset.models.VersionRelease;
+import org.ml_se.models.Bug;
+import org.ml_se.models.VersionRelease;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,9 +12,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static java.util.Locale.ITALIAN;
-import static org.create_dataset.Utils.readJsonFromUrl;
+import static org.ml_se.Utils.readJsonFromUrl;
 
 public class JiraManager {
 
@@ -30,11 +31,16 @@ public class JiraManager {
         JSONObject jsons = readJsonFromUrl(versionsUrl);
         JSONArray values = jsons.getJSONArray("versions");
 
+        String regex = "\\d+\\.\\d+\\.\\d"; // Pattern per il formato x.x.x
+        Pattern pattern = Pattern.compile(regex);
+
+
         for (int i = 0; i < values.length(); i++) {
             if (!values.getJSONObject(i).has("releaseDate")) {
                 continue;
             }
             String name = values.getJSONObject(i).getString("name");
+            if (!pattern.matcher(name).matches()) continue;
             String releaseDate = values.getJSONObject(i).getString("releaseDate");
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");

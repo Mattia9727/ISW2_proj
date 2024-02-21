@@ -1,4 +1,4 @@
-package org.create_dataset.models;
+package org.ml_se.models;
 
 public class HashDifference {
 
@@ -17,6 +17,8 @@ public class HashDifference {
     private int maxChurn = 0;
     private int avgChurn = 0;
     private boolean isBuggy;
+    private int ov;
+
 
     public HashDifference(String oldClassName, String newClassName, String actualHash) {
         this.oldClassName = oldClassName;
@@ -132,4 +134,13 @@ public class HashDifference {
     public void setBuggy(boolean buggy) {
         isBuggy = buggy;
     }
+
+    public int getOv() {
+        return ov;
+    }
+
+    public void setOv(int ov) {
+        this.ov = ov;
+    }
+
 }

@@ -1,13 +1,13 @@
-package org.create_dataset;
+package org.ml_se;
 
-import org.create_dataset.models.Bug;
-import org.create_dataset.models.VersionRelease;
+import org.ml_se.models.Bug;
+import org.ml_se.models.VersionRelease;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.create_dataset.JiraManager.*;
+import static org.ml_se.JiraManager.*;
 
 public class Proportion {
     private final String[] otherProjNames = {"AVRO", "STORM", "ZOOKEEPER", "SYNCOPE", "TAJO"};

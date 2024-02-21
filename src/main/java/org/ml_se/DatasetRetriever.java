@@ -1,9 +1,9 @@
-package org.create_dataset;
+package org.ml_se;
 
-import org.create_dataset.models.Bug;
-import org.create_dataset.models.Commit;
-import org.create_dataset.models.HashDifference;
-import org.create_dataset.models.VersionRelease;
+import org.ml_se.models.Bug;
+import org.ml_se.models.Commit;
+import org.ml_se.models.HashDifference;
+import org.ml_se.models.VersionRelease;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.*;
@@ -18,7 +18,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.create_dataset.DatasetFilter.filterDifflist;
+import static org.ml_se.DatasetFilter.filterDifflist;
 
 
 
@@ -145,7 +145,10 @@ public class DatasetRetriever {
         for (DiffEntry d : diffList) {
             String name = d.getNewPath();
             for (HashDifference h  : v.getHashDiffs()){
-                if (h.getNewClassName().equals(name) && b.getVersions().contains(v.getName())) h.setBuggy(true);
+                if (h.getNewClassName().equals(name) && b.getVersions().contains(v.getName())){
+                    h.setBuggy(true);
+                    h.setOv(b.getOvVersion());
+                }
             }
         }
     }
@@ -199,17 +202,14 @@ public class DatasetRetriever {
             List<HashDifference> hashDiffs = new ArrayList<>();
             String afterHash = versionReleases.get(i).getHash();
             for (DiffEntry d : versionReleases.get(i).getDiffList()) {
-                String newFilename = d.getNewPath(); // Prende path del file considerato
-                String oldFilename = d.getOldPath(); // Prende path del file considerato
+                String newFilename = d.getNewPath();
+                String oldFilename = d.getOldPath();
 
-                // Se non è un file java o è un file di test scarto
+                // Se non è un file java o è un file di test, lo scarto
                 if (DatasetFilter.checkIfJavaAndNotTest(newFilename)) continue;
 
                 foundHD = null;
                 if (!Objects.equals(oldFilename, "/dev/null")){
-                    if (!Objects.equals(oldFilename, newFilename)){
-                        logger.info("Rename!");
-                    }
                     foundHD = findOldVersionHashDiff(versionReleases, oldFilename, i);
                 }
 
