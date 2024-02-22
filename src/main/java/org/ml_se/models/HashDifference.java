@@ -18,6 +18,8 @@ public class HashDifference {
     private int avgChurn = 0;
     private boolean isBuggy;
     private int ov;
+    private int fv;
+
 
 
     public HashDifference(String oldClassName, String newClassName, String actualHash) {
@@ -143,4 +145,11 @@ public class HashDifference {
         this.ov = ov;
     }
 
+    public int getFv() {
+        return fv;
+    }
+
+    public void setFv(int fv) {
+        this.fv = fv;
+    }
 }

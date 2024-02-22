@@ -148,6 +148,7 @@ public class DatasetRetriever {
                 if (h.getNewClassName().equals(name) && b.getVersions().contains(v.getName())){
                     h.setBuggy(true);
                     h.setOv(b.getOvVersion());
+                    h.setFv(b.getFvVersion());
                 }
             }
         }
