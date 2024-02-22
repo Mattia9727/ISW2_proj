@@ -40,7 +40,7 @@ public class ArffConverter {
             for(HashDifference hd: v.getHashDiffs()){
                 boolean isBuggy;
                 if(isTrainingSet){
-                    if (hd.getFv()<=vCount) isBuggy=hd.isBuggy();
+                    if (hd.getOv()<=vCount) isBuggy=hd.isBuggy();
                     else isBuggy=false;
                 }
                 else isBuggy = hd.isBuggy();
